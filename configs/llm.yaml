@@ -1,0 +1,56 @@
+# Free / low-cost OpenAI-compatible LLM endpoints (no training required).
+# 1) register and create an API key, 2) export it as the environment variable below
+#    (Windows PowerShell:  $env:ZHIPU_API_KEY="xxx"   Linux/macOS: export ZHIPU_API_KEY=xxx)
+# Model names / free quotas change over time -- check the provider console and edit if needed.
+cache_path: data/llm_cache.jsonl
+
+models:
+  glm-4-flash:                 # Zhipu BigModel, free
+    base_url: https://open.bigmodel.cn/api/paas/v4/
+    model: glm-4-flash
+    api_key_env: ZHIPU_API_KEY
+    min_interval: 0.5
+  qwen2.5-7b:                  # SiliconFlow, free model
+    base_url: https://api.siliconflow.cn/v1
+    model: Qwen/Qwen2.5-7B-Instruct
+    api_key_env: SILICONFLOW_API_KEY
+    min_interval: 1.0
+  glm-4-9b:                    # SiliconFlow -- returned "Model disabled" (Oct 2026), kept for reference
+    base_url: https://api.siliconflow.cn/v1
+    model: THUDM/glm-4-9b-chat
+    api_key_env: SILICONFLOW_API_KEY
+    min_interval: 1.0
+  glm-4-9b-0414:               # SiliconFlow free model (successor of glm-4-9b-chat)
+    base_url: https://api.siliconflow.cn/v1
+    model: THUDM/GLM-4-9B-0414
+    api_key_env: SILICONFLOW_API_KEY
+    min_interval: 1.0
+  qwen3-8b:                    # SiliconFlow free model; thinking disabled for short JSON answers
+    base_url: https://api.siliconflow.cn/v1
+    model: Qwen/Qwen3-8B
+    api_key_env: SILICONFLOW_API_KEY
+    min_interval: 1.0
+    extra_body: {enable_thinking: false}
+  deepseek-r1-distill-7b:      # SiliconFlow, free reasoning model (outputs <think>, handled)
+    base_url: https://api.siliconflow.cn/v1
+    model: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+    api_key_env: SILICONFLOW_API_KEY
+    max_tokens: 4096
+    min_interval: 1.0
+  llama-3.3-70b-free:          # OpenRouter free model (needs overseas network)
+    base_url: https://openrouter.ai/api/v1
+    model: meta-llama/llama-3.3-70b-instruct:free
+    api_key_env: OPENROUTER_API_KEY
+    min_interval: 4.0
+  llama-3.1-8b-groq:           # Groq free tier (needs overseas network)
+    base_url: https://api.groq.com/openai/v1
+    model: llama-3.1-8b-instant
+    api_key_env: GROQ_API_KEY
+    min_interval: 2.0
+  qwen2.5-7b-local:            # Ollama on your own PC: `ollama pull qwen2.5:7b` (free, offline)
+    base_url: http://localhost:11434/v1
+    model: qwen2.5:7b
+    min_interval: 0.0
+  mock:                        # OFFLINE PIPELINE TEST ONLY -- never report its numbers
+    provider: mock
+    error_rate: 0.25

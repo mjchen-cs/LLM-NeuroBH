@@ -1,0 +1,22 @@
+\begin{tabular}{llcccccc}
+\toprule
+Model & Variant & Verified@K & Deployed safe & Priority $\pm1$ & Constr. exact & Conflict res. & Rounds \\
+\midrule
+glm-4-9b-0414 & Full (few-shot + verifier + repair) & 87.4 & 100.0 & 88.5 & 74.0 & 46.4 & 1.68 \\
+glm-4-9b-0414 & w/o repair loop & 73.2 & 100.0 & 86.8 & 73.2 & 0.0 & 1.00 \\
+glm-4-9b-0414 & w/o verifier & 73.2 & 81.9 & 86.8 & 73.2 & 0.0 & 1.00 \\
+glm-4-9b-0414 & w/o few-shot examples & 83.5 & 100.0 & 80.0 & 72.4 & 28.6 & 1.66 \\
+glm-4-flash & Full (few-shot + verifier + repair) & 83.5 & 100.0 & 86.0 & 79.5 & 42.9 & 1.74 \\
+glm-4-flash & w/o repair loop & 65.4 & 100.0 & 86.5 & 63.8 & 0.0 & 1.00 \\
+glm-4-flash & w/o verifier & 65.4 & 79.4 & 85.8 & 63.8 & 0.0 & 1.00 \\
+glm-4-flash & w/o few-shot examples & 78.0 & 100.0 & 69.3 & 47.2 & 21.4 & 2.22 \\
+qwen2.5-7b & Full (few-shot + verifier + repair) & 96.1 & 100.0 & 92.1 & 92.9 & 25.0 & 1.57 \\
+qwen2.5-7b & w/o repair loop & 80.3 & 100.0 & 90.2 & 79.5 & 0.0 & 1.00 \\
+qwen2.5-7b & w/o verifier & 80.3 & 79.4 & 90.9 & 81.1 & 0.0 & 1.00 \\
+qwen2.5-7b & w/o few-shot examples & 73.2 & 100.0 & 78.3 & 63.8 & 14.3 & 2.00 \\
+qwen3-8b & Full (few-shot + verifier + repair) & 80.3 & 100.0 & 87.6 & 78.7 & 3.6 & 1.87 \\
+qwen3-8b & w/o repair loop & 67.7 & 100.0 & 85.2 & 66.9 & 0.0 & 1.00 \\
+qwen3-8b & w/o verifier & 67.7 & 78.7 & 86.0 & 70.9 & 0.0 & 1.00 \\
+qwen3-8b & w/o few-shot examples & 79.5 & 100.0 & 79.2 & 71.7 & 21.4 & 1.83 \\
+\bottomrule
+\end{tabular}

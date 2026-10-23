@@ -1,0 +1,31 @@
+# Experiment configuration.  Put the datasets at these paths (or edit them).
+# Trace format: one file per trace, lines "<time_s> <bandwidth_Mbps>" (Pensieve format).
+# Missing folders fall back to SYNTHETIC data (smoke test only; figures get a watermark).
+# A folder may also be shipped as <folder>.zip -- it is read directly, no unzip needed.
+traces:
+  train:  [data/traces/train, data/traces/puffer]   # Pensieve FCC+HSDPA train + 70% Oboe/Lumos5G (+ Puffer if converted)
+  slow:   [data/traces/hsdpa, data/traces/fcc]
+  medium: [data/traces/oboe, data/traces/lumos4g]
+  fast:   [data/traces/5g]              # Lumos5G (5G, Verizon), held-out 30%
+  unknown: [data/traces/fcc, data/traces/lumos4g, data/traces/5g]
+
+videos:
+  train: data/videos/train              # Pensieve format: video_size_0..5 (+ optional vmaf.csv) per sub-folder
+  test:  data/videos/test               # e.g. envivo/, tos/, elw/  (re-encode to the training ladder or set ladder below)
+
+ladder_kbps: [300, 750, 1200, 1850, 2850, 4300]
+chunk_len: 4.0
+
+ckpt:
+  predictor: ckpt/predictor.pt
+  neurobh:   ckpt/neurobh.pt
+  neurobh_noshield: ckpt/neurobh_noshield.pt
+  neurobh_a2c: ckpt/neurobh_a2c.pt
+  pensieve:  ckpt/pensieve.pt
+
+sessions_per_dataset: 200                # test sessions per dataset (exp_abr)
+sessions_per_intent: 20                  # test sessions per intent (exp_e2e)
+llm_main: glm-4-flash                    # model whose specs are used in exp_e2e
+llm_models: [glm-4-flash, qwen2.5-7b, glm-4-9b-0414, qwen3-8b]   # compared in exp_llm
+results: results
+figures: figs

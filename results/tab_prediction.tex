@@ -1,0 +1,18 @@
+\begin{tabular}{llrrr}
+\toprule
+Dataset & Method & Mean (\%) $\downarrow$ & Median (\%) $\downarrow$ & 75th (\%) $\downarrow$ \\
+\midrule
+slow & Sliding window & 23.06 & 9.75 & 24.79 \\
+slow & Harmonic mean & 22.97 & 10.66 & 28.44 \\
+slow & EWMA & 21.86 & 9.27 & 23.42 \\
+slow & NeuroBH (GRU hybrid) & 22.10 & 9.41 & 21.10 \\
+medium & Sliding window & 59.47 & 18.28 & 38.50 \\
+medium & Harmonic mean & 43.72 & 18.55 & 39.32 \\
+medium & EWMA & 56.98 & 17.27 & 36.72 \\
+medium & NeuroBH (GRU hybrid) & 44.01 & 14.37 & 30.99 \\
+fast & Sliding window & 1656.87 & 37.36 & 77.50 \\
+fast & Harmonic mean & 807.09 & 45.70 & 81.97 \\
+fast & EWMA & 1489.23 & 34.14 & 77.04 \\
+fast & NeuroBH (GRU hybrid) & 885.60 & 27.94 & 71.99 \\
+\bottomrule
+\end{tabular}

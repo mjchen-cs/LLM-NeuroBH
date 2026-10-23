@@ -1,0 +1,18 @@
+# secrets -- never commit API keys
+.env
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+# IDE
+.idea/
+.vscode/
+# large local inputs / outputs (see README)
+video/
+dash/
+data/puffer_raw/
+data/traces/puffer.zip
+figs/
+ckpt.bak*/
+results.bak*/

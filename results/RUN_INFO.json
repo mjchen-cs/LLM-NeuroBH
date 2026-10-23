@@ -1,0 +1,25 @@
+{
+  "exp_predictor": {
+    "synthetic": false
+  },
+  "exp_llm": {
+    "synthetic": false,
+    "mock": false
+  },
+  "exp_abr": {
+    "synthetic": false
+  },
+  "exp_e2e": {
+    "synthetic": false,
+    "llm_model": "glm-4-flash"
+  },
+  "exp_overhead": {
+    "synthetic": false
+  },
+  "exp_eta": {
+    "synthetic": false
+  },
+  "exp_smooth": {
+    "synthetic": false
+  }
+}

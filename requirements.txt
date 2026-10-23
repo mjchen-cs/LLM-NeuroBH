@@ -1,0 +1,9 @@
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+pyyaml>=6.0
+torch>=2.1
+z3-solver>=4.12
+openai>=1.30
+tqdm
+playwright        # real-world testbed only

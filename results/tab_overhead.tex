@@ -1,0 +1,16 @@
+\begin{tabular}{lrr}
+\toprule
+Component & Mean (ms) & 95th (ms) \\
+\midrule
+NeuroBH policy only & 0.36 & 0.48 \\
+NeuroBH policy + shield & 0.40 & 0.72 \\
+RobustMPC & 0.27 & 0.31 \\
+BBA & 0.00 & 0.00 \\
+LLM service (glm-4-9b-0414), per session & 2591.88 & 5927.32 \\
+LLM service (glm-4-flash), per session & 10131.35 & 19720.72 \\
+LLM service (qwen2.5-7b), per session & 5148.32 & 11902.64 \\
+LLM service (qwen3-8b), per session & 7496.84 & 13123.28 \\
+Verifier, per spec & 40.72 & 89.03 \\
+LLM-ABR (direct), per chunk & 1409.17 & 2712.06 \\
+\bottomrule
+\end{tabular}

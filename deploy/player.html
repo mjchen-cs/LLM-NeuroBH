@@ -1,0 +1,105 @@
+<!doctype html>
+<!--
+  Real-world test page.  Serve the deploy/ folder with any static server, e.g.
+      python -m http.server 8080        (inside deploy/)
+  and open
+      http://localhost:8080/player.html?policy=neurobh&network=wifi&mpd=<URL of your .mpd>
+  URL parameters
+      policy   neurobh | llm-neurobh | pensieve | bba | bola | festive | dynamic | robustmpc
+               | dashjs-default (dash.js built-in DYNAMIC rule, no server)
+      network  label stored with the result (wifi, 4g, ...)
+      intent   (llm-neurobh only) natural-language service intent, URL-encoded
+      mpd      manifest URL (e.g. http://<media server>:8080/bbb/manifest.mpd from deploy/media_server.py);
+               sizes.json next to the manifest is loaded automatically (real segment sizes / VMAF)
+      serverbw 1 = use the media server's stable-connection bandwidth samples (default: 1 for
+               neurobh / llm-neurobh, 0 for the baselines, which use client-side measurements)
+      secs     stop after this many seconds (default 180)
+  When the session ends, one summary row is POSTed to the server (/report) and
+  appended to data/realworld.csv; plot with experiments/plot_testbed.py.
+-->
+<html><head><meta charset="utf-8"><title>NeuroBH player</title>
+<script src="dash.all.min.js"></script><!-- local copy of dash.js 4.7.4 (BSD-3); CDN fallback below -->
+<script>if (!window.dashjs) document.write('<script src="https://cdn.jsdelivr.net/npm/dashjs@4.7.4/dist/dash.all.min.js"><\/script>');</script>
+<script src="neurobh_rule.js"></script></head>
+<body style="font-family:sans-serif">
+<video id="v" width="960" controls muted></video>
+<pre id="log"></pre>
+<script>
+const q = new URLSearchParams(location.search);
+const POLICY = q.get('policy') || 'neurobh', NET = q.get('network') || 'unknown';
+const SECS = parseFloat(q.get('secs') || '180');
+const MPD = q.get('mpd') || '';   // required: no silent fallback to a public test stream
+const SESSION = POLICY + '-' + Date.now();
+const log = m => document.getElementById('log').textContent += m + '\n';
+const player = dashjs.MediaPlayer().create();
+if (POLICY !== 'dashjs-default') {
+  player.updateSettings({ streaming: { abr: { useDefaultABRRules: false } } });
+  player.addABRCustomRule('qualitySwitchRules', 'NeuroBHRule', NeuroBHRule);
+  NeuroBHRule.player = player; NeuroBHRule.session = SESSION; NeuroBHRule.policy = POLICY;
+  NeuroBHRule.network = NET;
+  NeuroBHRule.mediaOrigin = MPD ? new URL(MPD, location.href).origin : '';
+  const sb = q.get('serverbw');
+  NeuroBHRule.serverBw = sb !== null ? sb === '1' : (POLICY === 'neurobh' || POLICY === 'llm-neurobh');
+}
+let INFO = null;
+// ---- metrics
+let stallStart = null, stallTotal = 0, t0 = performance.now(), startup = null;
+const bitrates = [], quals = [], segIdx = [];
+const video = document.getElementById('v');
+video.addEventListener('waiting', () => { if (startup !== null) stallStart = performance.now(); });
+video.addEventListener('playing', () => {
+  if (startup === null) startup = (performance.now() - t0) / 1000;
+  if (stallStart) { stallTotal += (performance.now() - stallStart) / 1000; stallStart = null; }
+});
+player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, e => {
+  if (e.mediaType !== 'video') return;
+  const br = player.getBitrateInfoListFor('video')[e.newQuality].bitrate / 1e6;
+  bitrates.push(br); log(`quality -> ${e.newQuality} (${br.toFixed(2)} Mbps)`);
+});
+player.on(dashjs.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, e => {
+  if (e.request && e.request.mediaType === 'video' && e.request.type === 'MediaSegment') {
+    quals.push(e.request.quality); segIdx.push(e.request.index || quals.length - 1);
+  }
+});
+async function finish() {
+  const played = video.currentTime;
+  const br = quals.map(i => player.getBitrateInfoListFor('video')[i].bitrate / 1e6);
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+  let fl = 0; for (let i = 1; i < br.length; i++) fl += Math.abs(br[i] - br[i - 1]);
+  fl = br.length > 1 ? fl / (br.length - 1) : 0;
+  const rebuf = stallTotal / Math.max(played + stallTotal, 1e-6);
+  // QoE (Pensieve linear form, Mbps): bitrate - 4.3 * stall_s/chunk - |switch|
+  const qoe = mean(br) - 4.3 * stallTotal / Math.max(br.length, 1) - fl;
+  const live = player.isDynamic() ? player.getCurrentLiveLatency() : (startup || 0);
+  // VMAF-based QoE as in the paper (only if sizes.json carries VMAF): mean VMAF - |dVMAF| - 50*stall_s/chunk (default spec)
+  let vq = null, vmean = null;
+  if (INFO && INFO.vmaf && quals.length) {
+    const v = quals.map((l, i) => INFO.vmaf[l][Math.min(segIdx[i], INFO.n_chunks - 1)]);
+    let sm = 0; for (let i = 1; i < v.length; i++) sm += Math.abs(v[i] - v[i - 1]);
+    vmean = mean(v); vq = vmean - (v.length > 1 ? sm / (v.length - 1) : 0) - 50 * stallTotal / v.length;
+  }
+  const VIDEO = new URL(MPD, location.href).pathname.split('/').slice(-2)[0];
+  const row = { network: NET, video: VIDEO, policy: POLICY, session: SESSION, qoe: qoe, qoe_vmaf: vq, vmaf: vmean,
+                bitrate_mbps: mean(br),
+                rebuf_ratio: rebuf, latency_s: live, fluctuation: fl, startup_s: startup || 0,
+                intent: q.get('intent') || '' };
+  log(JSON.stringify(row));
+  try { await fetch(NEUROBH_SERVER + '/report', { method: 'POST', body: JSON.stringify(row) }); log('reported'); }
+  catch (e) { log('report failed: ' + e); }
+}
+(async () => {
+  if (!MPD) { log('ERROR: missing &mpd=<manifest URL> (put intent=... LAST and URL-encode it)'); return; }
+  if (POLICY === 'llm-neurobh' && q.get('intent')) {
+    const r = await fetch(NEUROBH_SERVER + '/intent', { method: 'POST',
+      body: JSON.stringify({ session: SESSION, text: q.get('intent') }) });
+    log('spec: ' + JSON.stringify(await r.json()));
+  }
+  try {                                             // real per-segment sizes / VMAF (tools/encode_dash.py)
+    const r = await fetch(new URL('sizes.json', new URL(MPD, location.href)).href);
+    if (r.ok) { INFO = await r.json(); if (typeof NeuroBHRule !== 'undefined') NeuroBHRule.info = INFO;
+                log(`sizes.json: ${INFO.n_chunks} segments` + (INFO.vmaf ? ', with VMAF' : '')); }
+  } catch (e) { log('no sizes.json (nominal sizes are used)'); }
+  player.initialize(video, MPD, true);
+  setTimeout(() => { video.pause(); finish(); }, SECS * 1000);
+})();
+</script></body></html>
