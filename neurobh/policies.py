@@ -3,6 +3,7 @@
   NeuroBHPolicy  : spec-conditioned PPO + neurosymbolic shield (LLM-NeuroBH when the
                    spec comes from the LLM Intent service)
   BBA, BOLA, FESTIVE, Dynamic, RobustMPC, RateBased : classic baselines (intent-unaware)
+  SODA           : recent baseline (SIGCOMM'24), re-implemented from the paper
   Pensieve       : NeuroBHPolicy trained with --no-shield --no-buffer-action --fixed-spec
   LLMDirectABR   : an LLM queried on EVERY chunk as the ABR controller (zero-shot,
                    optionally given the service intent) -- the "LLM on the fast path"
@@ -98,6 +99,52 @@ class RobustMPC:
             qoe += wq * v - self.w.epsilon * np.abs(v - prev_v) - self.w.beta * reb
             prev_v = v
         return int(self.combos[np.argmax(qoe), 0]), D0, False
+
+
+class SODA:
+    """SODA (Chen et al., SIGCOMM'24), re-implemented from the paper's description:
+    smoothed online optimisation over a short prediction horizon.  Every step minimises
+        sum_k  (100 - v_k)  +  w_b (B_k - B_target)^2  +  w_s (v_k - v_{k-1})^2  +  beta * rebuf_k
+    over the next h chunks, where v is VMAF, B the buffer after chunk k, and the throughput is the
+    predicted bandwidth.  As in SODA, the search is restricted to monotone bitrate sequences
+    (non-decreasing or non-increasing), which keeps the solver cheap, and only the first decision is
+    applied (receding horizon).  The quality term, the buffer cost around a target level and the
+    quadratic switching cost are SODA's three cost components; the explicit rebuffering term makes the
+    discrete version stall-averse.  Hyper-parameters were tuned on the training traces
+    (experiments/exp_abr.py --tune-soda)."""
+    name = "SODA"
+    def __init__(self, horizon=5, target=20.0, w_buf=0.05, w_switch=0.02, beta=50.0):
+        self.h, self.bt, self.wb, self.ws, self.beta = horizon, target, w_buf, w_switch, beta
+        self.combos = {}
+    def reset(self): pass
+    def _monotone(self, K, h):
+        if (K, h) not in self.combos:
+            up = list(itertools.combinations_with_replacement(range(K), h))
+            seq = set(up) | {tuple(reversed(c)) for c in up}
+            self.combos[(K, h)] = np.array(sorted(seq))
+        return self.combos[(K, h)]
+    def act(self, env, s):
+        K, L = env.K, env.L
+        h = max(1, min(self.h, s["remaining"]))
+        combos = self._monotone(K, h)
+        bw = max(s["pred_bw"], 1.0)
+        i0 = s["chunk"]; vid = env.video
+        idx = np.minimum(np.arange(i0, i0 + h), vid.n_chunks - 1)
+        sizes = vid.sizes[:, idx]; vm = vid.vmaf[:, idx]
+        n = len(combos)
+        buf = np.full(n, s["buffer"]); cost = np.zeros(n)
+        prev_v = np.full(n, vid.vmaf[s["prev_level"], max(i0 - 1, 0)]) if i0 > 0 else None
+        for t in range(h):
+            lv = combos[:, t]
+            dt = sizes[lv, t] * 8 / 1000 / bw
+            reb = np.maximum(dt - buf, 0)
+            buf = np.maximum(buf - dt, 0) + L
+            v = vm[lv, t]
+            cost += (100 - v) + self.wb * (buf - self.bt) ** 2 + self.beta * reb
+            if prev_v is not None:
+                cost += self.ws * (v - prev_v) ** 2
+            prev_v = v
+        return int(combos[np.argmin(cost), 0]), D0, False
 
 
 class FESTIVE:

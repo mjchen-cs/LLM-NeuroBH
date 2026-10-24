@@ -202,6 +202,7 @@ Error bars in Fig. 6 are 95% Student-t confidence intervals over the 200 session
 | Buffer-based | BBA, BOLA |
 | Rate-based | FESTIVE |
 | Hybrid | DYNAMIC (dash.js default rule), RobustMPC |
+| Recent | SODA (SIGCOMM 2024), re-implemented from the paper. Its weights are grid-searched on the training traces (`python experiments/exp_abr.py --tune-soda`). To re-run only SODA and merge it into the existing results: `python experiments/exp_abr.py --policies SODA` |
 | Learning-based | Pensieve (same traces and network architecture, no shield) |
 | LLM-based | **LLM-ABR (direct):** the LLM picks the bitrate for every chunk, and the API latency counts as decision delay. **LLM-ABR (no delay):** the same, but the latency is ignored. **LLM-ABR (direct, intent):** the service intent is added to the prompt (RQ3). |
 

@@ -28,7 +28,8 @@ STYLE = {
     "BBA": ("#e87ba4", "v"), "Pensieve": ("#6250d6", "D"), "NeuroBH w/o NS": ("#008300", "P"),
     "NeuroBH (A2C)": ("#e34948", "X"), "LLM-NeuroBH w/o verifier": ("#e34948", "X"),
     "Oracle-NeuroBH": ("#8a8984", "h"), "Rate-based": ("#8a8984", "<"),
-    "FESTIVE": ("#008300", ">"), "Dynamic": ("#e34948", "d"),   # w/o NS & A2C never share a figure with these
+    "FESTIVE": ("#008300", ">"), "Dynamic": ("#e34948", "d"),
+    "SODA": ("#9c6b30", "8"),   # w/o NS & A2C never share a figure with these
     "LLM-ABR (direct)": ("#52514e", "p"), "LLM-ABR (no delay)": ("#8a8984", "p"), "LLM-ABR (direct, intent)": ("#52514e", "p"),
 }
 INK2 = "#52514e"
@@ -69,7 +70,7 @@ def save(fig, cfg, name):
 
 
 def order(policies):
-    pref = ["BBA", "BOLA", "FESTIVE", "Dynamic", "RobustMPC", "Pensieve", "LLM-ABR (direct)",
+    pref = ["BBA", "BOLA", "FESTIVE", "Dynamic", "RobustMPC", "SODA", "Pensieve", "LLM-ABR (direct)",
             "LLM-ABR (direct, intent)", "NeuroBH w/o NS", "NeuroBH (A2C)", "NeuroBH",
             "NeuroBH (default)", "LLM-NeuroBH w/o verifier", "LLM-NeuroBH", "Oracle-NeuroBH"]
     return [p for p in pref if p in policies] + [p for p in policies if p not in pref]
